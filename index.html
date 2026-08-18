@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>七夕 · 鹊桥</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family: "Songti SC", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+    color: #f5efff;
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+    touch-action: manipulation;
+    -webkit-user-select: none; user-select: none;
+    background: linear-gradient(180deg, #3a2a5e 0%, #241a44 55%, #150d2e 100%);
+    transition: background 1.2s ease;
+  }
+  /* 时辰色调：晨曦→白昼→黄昏→子夜 */
+  body.mode-dawn { background: linear-gradient(180deg, #6a4a8e 0%, #4a3370 45%, #2c1d52 100%); }
+  body.mode-day  { background: linear-gradient(180deg, #7aa8d8 0%, #5c86c0 45%, #3a5a8e 100%); }
+  body.mode-dusk { background: linear-gradient(180deg, #e8926a 0%, #b95e7e 50%, #4a2a5e 100%); }
+  body.mode-night{ background: linear-gradient(180deg, #241642 0%, #150b30 55%, #070415 100%); }
+  #sky {
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    display:block; pointer-events:none; z-index:0;
+  }
+
+  .wrap {
+    position: relative; z-index: 2;
+    width: 100%; height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+
+  /* ===== 门铃（密码） ===== */
+  #gate {
+    position: absolute; inset:0; z-index: 20;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 20px; padding: 30px; text-align:center;
+  }
+  #gate .g-star { font-size: 54px; animation: twinkle 2.6s ease-in-out infinite; }
+  #gate h1 { font-size: 26px; letter-spacing: 6px; font-weight:500; color:#f0e0ff; }
+  #gate .g-sub { font-size: 13px; color:#b8a4d8; letter-spacing:2px; }
+  #gate input {
+    margin-top: 8px; width: 200px; text-align:center;
+    font-size: 22px; letter-spacing: 10px; font-family:inherit;
+    padding: 12px 14px; border-radius: 14px;
+    border: 1px solid rgba(190,160,240,.35);
+    background: rgba(30,20,60,.5); color:#f5eaff; outline:none;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  #gate input::placeholder { color:#8a76b0; letter-spacing:4px; }
+  #gate button {
+    padding: 12px 34px; font-size: 15px; letter-spacing:3px;
+    border:none; border-radius:999px; cursor:pointer;
+    background: linear-gradient(135deg, #c86aa8, #8a5ad0);
+    color:#fff; font-family:inherit;
+    box-shadow: 0 10px 30px rgba(150,90,200,.4);
+    transition: transform .15s;
+  }
+  #gate button:active { transform: scale(.94); }
+  #gate .g-err { height: 18px; font-size:12px; color:#ffb0c8; }
+
+  /* ===== 进度 HUD ===== */
+  #app { display:none; flex-direction:column; align-items:center;
+    width:100%; max-width:520px; height:100vh; }
+  #app.on { display:flex; }
+  .hud { width:100%; padding: 6px 2px 10px; }
+  .hud-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .hud-time { font-size: 13px; letter-spacing:3px; color:#e0c8ff; }
+  .hud-stage { font-size: 12px; color:#9a86c4; letter-spacing:1px; }
+  .hud-bar { width:100%; height:5px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; }
+  .hud-fill { height:100%; width:0%; border-radius:5px;
+    background: linear-gradient(90deg,#e88ac0,#b86ae8,#7a9af0);
+    transition: width .6s cubic-bezier(.2,.8,.2,1); }
+
+  /* ===== 舞台 ===== */
+  .stage {
+    flex:1; width:100%; display:none;
+    flex-direction:column; align-items:center; justify-content:center;
+    position: relative;
+  }
+  .stage.on { display:flex; animation: fadeIn .5s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:none; } }
+
+  .stage-title { font-size: 20px; letter-spacing:3px; font-weight:500; margin-bottom:6px; color:#fff; }
+  .stage-desc { font-size: 13px; color:#c8b4e8; margin-bottom: 22px; letter-spacing:1px; text-align:center; line-height:1.9; }
+  .stage-hint { font-size: 12px; color:#9a86c4; margin-top: 18px; letter-spacing:2px; }
+
+  .btn {
+    padding: 13px 30px; font-size: 15px; letter-spacing:3px;
+    border:none; border-radius:999px; cursor:pointer; font-family:inherit;
+    background: linear-gradient(135deg, #e88ac0, #8a5ad0);
+    color:#fff; box-shadow: 0 10px 26px rgba(150,90,200,.4);
+    transition: transform .15s, opacity .2s;
+  }
+  .btn:active { transform: scale(.95); }
+  .btn:disabled { opacity:.35; pointer-events:none; }
+  .btn.ghost { background: rgba(255,255,255,.08); color:#e8d8ff; border:1px solid rgba(200,170,240,.3);
+    box-shadow:none; font-size:13px; padding:11px 22px; }
+
+  /* ---- 关1 拾星 ---- */
+  #stage1 #stars { width:100%; height:60%; position:relative; }
+  .star {
+    position:absolute; cursor:pointer; 
+    font-size: 30px; transform: translate(-50%,-50%);
+    animation: starFloat 3s ease-in-out infinite;
+    transition: transform .25s;
+  }
+  .star:active { transform: translate(-50%,-50%) scale(1.5); }
+  .star.gone { animation: starPop .4s ease forwards; pointer-events:none; }
+  @keyframes starPop { to { transform: translate(-50%,-50%) scale(3); opacity:0; } }
+
+  /* ---- 关2 翻牌 ---- */
+  #stage2 .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; max-width:340px; }
+  .flip { aspect-ratio:3/4; position:relative; cursor:pointer; perspective:600px; }
+  .flip .inner {
+    position:absolute; inset:0; transition: transform .45s;
+    transform-style:preserve-3d;
+  }
+  .flip.flipped .inner { transform: rotateY(180deg); }
+  .flip .face {
+    position:absolute; inset:0; border-radius:12px; backface-visibility:hidden;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 30px; border:1px solid rgba(200,170,240,.25);
+  }
+  .flip .back { background: linear-gradient(160deg,#4a3570,#2a1a4a); }
+  .flip .back::after { content:'❀'; font-size:18px; color:rgba(255,255,255,.35); }
+  .flip .front { background: linear-gradient(160deg,#fff7fb,#f3d9eb); transform: rotateY(180deg); }
+  .flip.matched .front { border-color:#e88ac0; box-shadow:0 0 16px rgba(232,138,192,.5); }
+
+  /* ---- 关3 传书 ---- */
+  #stage3 .sentence {
+    font-size: 17px; line-height:2.2; margin: 8px 0 18px; letter-spacing:1px;
+    color:#f0e8ff; text-align:center;
+  }
+  #stage3 .blank { color:#ffd6e8; border-bottom:2px dashed rgba(255,200,230,.5); padding:0 4px; min-width:40px; display:inline-block; }
+  #stage3 .choices { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:8px; }
+  #stage3 .chip {
+    padding: 9px 16px; border-radius:999px; cursor:pointer; font-size:14px;
+    background: rgba(255,255,255,.08); color:#e8d8ff; font-family:inherit;
+    border:1px solid rgba(200,170,240,.25); transition:all .15s; letter-spacing:1px;
+  }
+  #stage3 .chip.sel { background: linear-gradient(135deg,#e88ac0,#8a5ad0); color:#fff; border-color:transparent; }
+
+  /* ---- 关4 搭桥 ---- */
+  #stage4 #river { width:100%; height:56%; position:relative; }
+  #stage4 .bridge { position:absolute; left:6%; right:6%; top:40%; height:90px; display:flex; align-items:flex-end; justify-content:center; }
+  .magpie { font-size:26px; margin:0 -2px; opacity:0; transform: translateY(60px) scale(.5);
+    transition: opacity .35s, transform .35s; animation: none; }
+  .magpie.in { opacity:1; transform: translateY(0) scale(1); }
+  #stage4 .riverline { position:absolute; left:8%; right:8%; top:52%; border-top:2px dashed rgba(120,140,220,.35); }
+  #stage4 #spawnBtn { font-size:16px; }
+
+  /* ---- 关5 相会 ---- */
+  #stage5 .meet { position:relative; width:100%; height:44%; }
+  .lover { position:absolute; top:50%; font-size:30px; transform: translate(-50%,-50%); filter: drop-shadow(0 0 12px rgba(255,210,160,.7)); }
+  #lShe { left:22%; color:#ffc8e0; }
+  #lHe { left:78%; color:#9ac8ff; }
+  .lover.walk { transition: left 2.6s cubic-bezier(.3,.1,.3,1); }
+  #finalText { font-size: 15px; line-height:2.1; color:#f0e8ff; text-align:center; white-space:pre-line;
+    letter-spacing:1px; margin-bottom: 18px; }
+  .burst { position:fixed; pointer-events:none; z-index:5; animation: burstUp 1.4s ease-out forwards; }
+  @keyframes burstUp { from { transform: translateY(0) scale(1); opacity:1;} to { transform: translateY(-90px) scale(.4); opacity:0; } }
+
+  @keyframes twinkle { 0%,100%{ opacity:.55; transform:scale(.92);} 50%{ opacity:1; transform:scale(1.08);} }
+  @keyframes starFloat { 0%,100%{ transform:translate(-50%,-50%) translateY(0);} 50%{ transform:translate(-50%,-50%) translateY(-8px);} }
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+
+<!-- 门铃 -->
+<div id="gate">
+  <div class="g-star">🌌</div>
+  <h1>七夕 · 鹊桥</h1>
+  <div class="g-sub">给 IRIS 的特别版</div>
+  <input id="pwd" type="password" inputmode="numeric" placeholder="暗号" maxlength="8">
+  <button id="unlock">推门而入</button>
+  <div class="g-err" id="gerr"></div>
+</div>
+
+<!-- 主体 -->
+<div id="app">
+  <div class="hud">
+    <div class="hud-top">
+      <span class="hud-time" id="hudTime">晨曦</span>
+      <span class="hud-stage" id="hudStage">第 1 幕 · 共 5 幕</span>
+    </div>
+    <div class="hud-bar"><div class="hud-fill" id="hudFill"></div></div>
+  </div>
+
+  <!-- 拾星 -->
+  <div class="stage" id="stage1">
+    <div class="stage-title">第一幕 · 拾星</div>
+    <div class="stage-desc">七夕的清晨，天上还挂着七颗晨星。<br>轻轻点一点，替 IRIS 收下它们。</div>
+    <div id="stars"></div>
+    <div class="stage-hint" id="s1hint">已拾 0 / 7</div>
+  </div>
+
+  <!-- 织云 -->
+  <div class="stage" id="stage2">
+    <div class="stage-title">第二幕 · 织云</div>
+    <div class="stage-desc">白昼，替织女把散落的云锦一一找回。<br>翻开卡片，凑成对子。</div>
+    <div class="grid" id="grid"></div>
+    <div class="stage-hint" id="s2hint">已配 0 / 4 对</div>
+  </div>
+
+  <!-- 传书 -->
+  <div class="stage" id="stage3">
+    <div class="stage-title">第三幕 · 传书</div>
+    <div class="stage-desc">午后，写一句只属于今晚的话。</div>
+    <div class="sentence" id="sentence"></div>
+    <div class="choices" id="choices"></div>
+    <div style="margin-top:24px;" class="btn" id="sendBtn" disabled>寄出这封信</div>
+  </div>
+
+  <!-- 搭桥 -->
+  <div class="stage" id="stage4">
+    <div class="stage-title">第四幕 · 搭桥</div>
+    <div class="stage-desc">入夜，喜鹊一只只飞来。点一点，<br>让它们在天河上搭起一座桥。</div>
+    <div id="river">
+      <div class="riverline"></div>
+      <div class="bridge" id="bridge"></div>
+    </div>
+    <div class="btn" id="spawnBtn">唤来喜鹊</div>
+    <div class="stage-hint" id="s4hint">已搭 0 / 18 只</div>
+  </div>
+
+  <!-- 相会 -->
+  <div class="stage" id="stage5">
+    <div class="stage-title">第五幕 · 相会</div>
+    <div class="meet">
+      <div class="lover" id="lShe">🌸</div>
+      <div class="lover" id="lHe">⭐</div>
+    </div>
+    <div class="stage-desc" id="s5desc">鹊桥已成，只差最后一步。</div>
+    <div id="finalText" style="display:none;"></div>
+    <div class="stage-desc" id="meetBtnWrap"></div>
+  </div>
+</div>
+
+<script>
+/* ===== 星空背景 ===== */
+var cv = document.getElementById('sky'), ctx = cv.getContext('2d');
+var stars = [];
+function resize(){ cv.width = innerWidth; cv.height = innerHeight; }
+resize(); window.addEventListener('resize', resize);
+function makeStars(){
+  stars = [];
+  for (var i=0;i<90;i++){
+    stars.push({ x:Math.random()*cv.width, y:Math.random()*cv.height,
+      r:Math.random()*1.4+0.4, tw:Math.random()*Math.PI*2, sp:0.02+Math.random()*0.05 });
+  }
+}
+makeStars();
+function drawSky(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  for (var i=0;i<stars.length;i++){
+    var s = stars[i];
+    s.tw += s.sp;
+    var a = 0.35 + Math.sin(s.tw)*0.35;
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255,235,255,'+a.toFixed(3)+')';
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+  requestAnimationFrame(drawSky);
+}
+drawSky();
+
+/* ===== 门铃 ===== */
+var PWD = '0605';
+document.getElementById('unlock').onclick = function(){
+  var v = document.getElementById('pwd').value.trim();
+  if (v === PWD){ startGame(); }
+  else { document.getElementById('gerr').textContent = '暗号不对，再想想'; }
+};
+document.getElementById('pwd').addEventListener('keydown', function(e){
+  if (e.key === 'Enter'){ document.getElementById('unlock').click(); }
+});
+
+var times = ['晨曦','白昼','黄昏','入夜','子夜'];
+var modes = ['mode-dawn','mode-day','mode-dusk','mode-night','mode-night'];
+function startGame(){
+  document.getElementById('gate').style.display = 'none';
+  var app = document.getElementById('app');
+  app.classList.add('on');
+  goStage(0);
+}
+
+/* ===== 关卡切换 ===== */
+var stageNames = ['stage1','stage2','stage3','stage4','stage5'];
+var curStage = -1;
+function goStage(i){
+  curStage = i;
+  for (var k=0;k<stageNames.length;k++){
+    document.getElementById(stageNames[k]).classList.toggle('on', k===i);
+  }
+  document.getElementById('hudTime').textContent = times[i];
+  document.getElementById('hudStage').textContent = '第 '+(i+1)+' 幕 · 共 5 幕';
+  document.getElementById('hudFill').style.width = ((i)/5*100)+'%';
+  document.body.className = modes[i];
+  if (i<5) document.getElementById('hudFill').style.width = ((i+1)/5*100)+'%';
+  if (i===0) initStars();
+  if (i===1) initFlip();
+  if (i===2) initLetter();
+  if (i===3) initBridge();
+  if (i===4) initMeet();
+}
+
+/* ===== 关1 拾星 ===== */
+var picked = 0;
+function initStars(){
+  picked = 0;
+  document.getElementById('s1hint').textContent = '已拾 0 / 7';
+  var box = document.getElementById('stars');
+  box.innerHTML = '';
+  var spots = [];
+  for (var i=0;i<7;i++){
+    spots.push({ x: 12+Math.random()*76, y: 15+Math.random()*70 });
+  }
+  spots.forEach(function(p, idx){
+    var s = document.createElement('div');
+    s.className = 'star'; s.textContent = '⭐';
+    s.style.left = p.x+'%'; s.style.top = p.y+'%';
+    s.style.animationDelay = (idx*0.25)+'s';
+    s.onclick = function(){
+      if (s.classList.contains('gone')) return;
+      s.classList.add('gone');
+      picked++;
+      document.getElementById('s1hint').textContent = '已拾 '+picked+' / 7';
+      if (picked === 7){
+        setTimeout(function(){ goStage(1); }, 600);
+      }
+    };
+    box.appendChild(s);
+  });
+}
+
+/* ===== 关2 翻牌 ===== */
+var flipOpen = [], matched = 0, lockFlip = false;
+function initFlip(){
+  flipOpen = []; matched = 0; lockFlip = false;
+  document.getElementById('s2hint').textContent = '已配 0 / 4 对';
+  var syms = ['☁️','🌤️','🌈','💧','☁️','🌤️','🌈','💧'];
+  // 洗牌
+  for (var i=syms.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=syms[i];syms[i]=syms[j];syms[j]=t; }
+  var grid = document.getElementById('grid'); grid.innerHTML='';
+  syms.forEach(function(s, idx){
+    var f = document.createElement('div'); f.className='flip';
+    f.innerHTML = '<div class="inner"><div class="face back"></div><div class="face front">'+s+'</div></div>';
+    f.onclick = function(){ flipCard(f, s); };
+    grid.appendChild(f);
+  });
+}
+function flipCard(el, sym){
+  if (lockFlip || el.classList.contains('flipped') || el.classList.contains('matched')) return;
+  el.classList.add('flipped');
+  flipOpen.push({el:el, sym:sym});
+  if (flipOpen.length === 2){
+    lockFlip = true;
+    var a = flipOpen[0], b = flipOpen[1];
+    if (a.sym === b.sym){
+      a.el.classList.add('matched'); b.el.classList.add('matched');
+      matched++;
+      document.getElementById('s2hint').textContent = '已配 '+matched+' / 4 对';
+      flipOpen = []; lockFlip = false;
+      if (matched === 4){ setTimeout(function(){ goStage(2); }, 600); }
+    } else {
+      setTimeout(function(){
+        a.el.classList.remove('flipped'); b.el.classList.remove('flipped');
+        flipOpen = []; lockFlip = false;
+      }, 750);
+    }
+  }
+}
+
+/* ===== 关3 传书 ===== */
+var sentenceParts = [
+  { label:'今天，', opts:['我想见你','我想念你','我想着你'] },
+  { label:'我已经', opts:['把银河借来','把晨星收好','把想念攒满'] },
+  { label:'只为对你说一句', opts:['七夕快乐','我很想你','往后的路一起走'] },
+];
+var picks = [null,null,null];
+function initLetter(){
+  picks = [null,null,null];
+  document.getElementById('sendBtn').setAttribute('disabled','true');
+  renderLetter();
+}
+function renderLetter(){
+  var html = '';
+  for (var i=0;i<sentenceParts.length;i++){
+    var p = sentenceParts[i];
+    html += p.label;
+    if (picks[i]==null){ html += '<span class="blank">＿＿</span>'; }
+    else { html += '<span class="blank" style="color:#fff;">'+picks[i]+'</span>'; }
+  }
+  html += '。';
+  document.getElementById('sentence').innerHTML = html;
+
+  var box = document.getElementById('choices'); box.innerHTML='';
+  sentenceParts.forEach(function(part, gi){
+    var row = document.createElement('div');
+    row.className='choices'; row.style.width='100%'; row.style.marginBottom='6px';
+    part.opts.forEach(function(o, oi){
+      var c = document.createElement('button'); c.className='chip'; c.textContent=o;
+      if (picks[gi]===o) c.classList.add('sel');
+      c.onclick = function(){
+        picks[gi] = o; renderLetter();
+        updateSend();
+      };
+      row.appendChild(c);
+    });
+    box.appendChild(row);
+  });
+}
+function updateSend(){
+  var done = picks.every(function(x){ return x!==null; });
+  var sb = document.getElementById('sendBtn');
+  if (done){ sb.removeAttribute('disabled'); }
+  sb.onclick = function(){
+    if (!done) return;
+    sentLetter = picks.join('，') + '。';
+    // 展示寄出反馈后进入下一关
+    var s = document.getElementById('sentence');
+    s.innerHTML = '「 '+sentLetter+' 」';
+    document.getElementById('choices').innerHTML='';
+    var sb = document.getElementById('sendBtn'); sb.textContent='已寄出 💌'; sb.setAttribute('disabled','true');
+    setTimeout(function(){ sb.textContent='寄出这封信'; goStage(3); }, 1200);
+  };
+}
+var sentLetter = '';
+
+/* ===== 关4 搭桥 ===== */
+var magpieCount = 0, TOTAL = 18;
+function initBridge(){
+  magpieCount = 0;
+  document.getElementById('s4hint').textContent = '已搭 0 / '+TOTAL+' 只';
+  document.getElementById('bridge').innerHTML='';
+  document.getElementById('spawnBtn').removeAttribute('disabled');
+}
+document.getElementById('spawnBtn').onclick = function(){
+  if (magpieCount >= TOTAL) return;
+  var b = document.createElement('span');
+  b.className='magpie';
+  b.textContent = (magpieCount%3===0) ? '🕊️' : '🐦';
+  var bridge = document.getElementById('bridge');
+  bridge.appendChild(b);
+  requestAnimationFrame(function(){ b.classList.add('in'); });
+  magpieCount++;
+  document.getElementById('s4hint').textContent = '已搭 '+magpieCount+' / '+TOTAL+' 只';
+  if (magpieCount >= TOTAL){
+    var sb = document.getElementById('spawnBtn');
+    sb.textContent = '鹊桥已成'; sb.setAttribute('disabled','true');
+    setTimeout(function(){ sb.textContent='唤来喜鹊'; goStage(4); }, 900);
+  }
+};
+
+/* ===== 关5 相会 ===== */
+function initMeet(){
+  var sh = document.getElementById('lShe'), he = document.getElementById('lHe');
+  sh.classList.remove('walk'); he.classList.remove('walk');
+  sh.style.left='22%'; he.style.left='78%';
+  document.getElementById('s5desc').textContent = '鹊桥已成，只差最后一步。';
+  document.getElementById('finalText').style.display='none';
+  var wrap = document.getElementById('meetBtnWrap');
+  wrap.innerHTML = '<div class="btn" id="meetBtn" style="margin-top:6px;">让 TA 们相会</div>';
+  document.getElementById('meetBtn').onclick = function(){
+    this.style.display='none';
+    document.getElementById('s5desc').textContent = '夜色正浓，星光一路铺到脚下……';
+    sh.classList.add('walk'); he.classList.add('walk');
+    sh.style.left='50%'; he.style.left='50%';
+    setTimeout(function(){ boom(); }, 1800);
+    setTimeout(function(){ showFinal(); }, 2600);
+  };
+}
+function boom(){
+  for (var i=0;i<26;i++){
+    var p = document.createElement('div');
+    p.className='burst';
+    var emojis = ['💖','✨','🌸','💫','⭐','🩷'];
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    p.style.left = (48+Math.random()*6)+'%';
+    p.style.top = (46+Math.random()*10)+'%';
+    p.style.fontSize = (16+Math.random()*16)+'px';
+    p.style.animationDelay = (Math.random()*0.3)+'s';
+    document.body.appendChild(p);
+    (function(pp){ setTimeout(function(){ pp.remove(); }, 1800); })(p);
+  }
+  var sh = document.getElementById('lShe'), he = document.getElementById('lHe');
+  sh.style.display='none'; he.style.display='none';
+  var big = document.createElement('div');
+  big.style.cssText='position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);font-size:64px;';
+  big.textContent='💞';
+  document.getElementById('stage5').querySelector('.meet').appendChild(big);
+}
+function showFinal(){
+  var ft = document.getElementById('finalText');
+  ft.style.display='block';
+  ft.textContent = 'IRIS：\n七夕快乐。\n我把晨星收好，把云霞织成信，\n把一整个黄昏的鹊，都赶到这座桥上，\n只为七月初七，走到你面前，说一句——\n我想见你。';
+  var wrap = document.getElementById('meetBtnWrap');
+  wrap.innerHTML = '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">'+
+    '<div class="btn" id="copyBtn">复制这句告白</div>'+
+    '<button class="btn ghost" id="replayBtn">再走一遍</button></div>';
+  document.getElementById('copyBtn').onclick = function(){
+    var txt = 'IRIS：\n七夕快乐。\n我把晨星收好，把云霞织成信，\n把一整个黄昏的鹊，都赶到这座桥上，\n只为七月初七，走到你面前，说一句——\n我想见你。';
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){
+        document.getElementById('copyBtn').textContent='已复制 ✓';
+      });
+    } else {
+      var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); ta.remove();
+      document.getElementById('copyBtn').textContent='已复制 ✓';
+    }
+  };
+  document.getElementById('replayBtn').onclick = function(){ location.reload(); };
+}
+</script>
+</body>
+</html>
