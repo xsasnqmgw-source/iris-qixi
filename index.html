@@ -196,7 +196,7 @@
   /* ---- 关5 相会 ---- */
   #stage5 .meet { position:relative; width:100%; height:44%; }
   .lover { position:absolute; top:50%; font-size:30px; transform: translate(-50%,-50%); filter: drop-shadow(0 0 12px rgba(255,210,160,.7)); }
-  #lShe { left:22%; color:#ffc8e0; }
+  #lShe { left:22%; filter: drop-shadow(0 0 14px rgba(170,140,230,.8)); }
   #lHe { left:78%; color:#9ac8ff; }
   .lover.walk { transition: left 2.6s cubic-bezier(.3,.1,.3,1); }
   #finalText { font-size: 15px; line-height:2.1; color:#f0e8ff; text-align:center; white-space:pre-line;
@@ -296,7 +296,15 @@
       <div class="lore-note">千百年过去，人们还是会在这一夜抬头，看那两颗星慢慢走近。相会很短，短到只够互望一眼，却让往后所有平常的日子，都有了光。</div>
     </div>
     <div class="meet">
-      <div class="lover" id="lShe">🌸</div>
+      <div class="lover" id="lShe"><svg class="iris" viewBox="0 0 48 48" width="34" height="34" aria-hidden="true">
+        <path d="M24 26 C21.4 20 21.8 12 24 7.5 C26.2 12 26.6 20 24 26 Z" transform="rotate(-22 24 24)" fill="#b99cef"/>
+        <path d="M24 26 C21.4 20 21.8 12 24 7.5 C26.2 12 26.6 20 24 26 Z" transform="rotate(22 24 24)" fill="#b99cef"/>
+        <path d="M24 26 C21.4 20 21.8 12 24 7.5 C26.2 12 26.6 20 24 26 Z" fill="#a17fd8"/>
+        <path d="M24 27 C20.4 32 19.6 39.5 22.4 44.6 C23.4 46 24.6 46 25.6 44.6 C28.4 39.5 27.6 32 24 27 Z" transform="rotate(-28 24 24)" fill="#7a58ba"/>
+        <path d="M24 27 C20.4 32 19.6 39.5 22.4 44.6 C23.4 46 24.6 46 25.6 44.6 C28.4 39.5 27.6 32 24 27 Z" transform="rotate(28 24 24)" fill="#7a58ba"/>
+        <path d="M24 27 C20.4 32 19.6 39.5 22.4 44.6 C23.4 46 24.6 46 25.6 44.6 C28.4 39.5 27.6 32 24 27 Z" fill="#6a48a8"/>
+        <ellipse cx="24" cy="28" rx="3.6" ry="2.8" fill="#ffd76e"/>
+      </svg></div>
       <div class="lover" id="lHe">🐱</div>
     </div>
     <div class="stage-desc" id="s5desc">鹊桥已成，只差最后一步。</div>
