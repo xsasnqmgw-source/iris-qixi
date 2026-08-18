@@ -608,10 +608,20 @@ function boom(){
   heartConfetti();
   var sh = document.getElementById('lShe'), he = document.getElementById('lHe');
   sh.style.display='none'; he.style.display='none';
+  var box = document.getElementById('stage5').querySelector('.meet');
   var big = document.createElement('div');
-  big.style.cssText='position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);font-size:64px;animation:twinkle 2s ease-in-out infinite;';
-  big.textContent='💞';
-  document.getElementById('stage5').querySelector('.meet').appendChild(big);
+  big.style.cssText='position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);animation:twinkle 2.2s ease-in-out infinite;';
+  big.innerHTML='<svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true">'
+    +'<defs><radialGradient id="irglow" cx="50%" cy="50%" r="50%">'
+    +'<stop offset="0%" stop-color="#fff6e0" stop-opacity=".95"/>'
+    +'<stop offset="55%" stop-color="#ffe9c2" stop-opacity=".45"/>'
+    +'<stop offset="100%" stop-color="#ffe9c2" stop-opacity="0"/>'
+    +'</radialGradient></defs>'
+    +'<circle cx="32" cy="32" r="30" fill="url(#irglow)"/>'
+    +'<path d="M32 4 L36.6 27.4 L60 32 L36.6 36.6 L32 60 L27.4 36.6 L4 32 L27.4 27.4 Z" fill="#fff4d6"/>'
+    +'<path d="M32 4 L36.6 27.4 L60 32 L36.6 36.6 L32 60 L27.4 36.6 L4 32 L27.4 27.4 Z" transform="rotate(45 32 32)" fill="#ffe9b8" opacity=".85"/>'
+    +'</svg>';
+  box.appendChild(big);
 }
 function showFinal(){
   var ft = document.getElementById('finalText');
