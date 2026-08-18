@@ -81,15 +81,32 @@
   /* ===== 舞台 ===== */
   .stage {
     flex:1; width:100%; display:none;
-    flex-direction:column; align-items:center; justify-content:center;
-    position: relative;
+    flex-direction:column; align-items:center; justify-content:flex-start;
+    position: relative; overflow-y:auto; overflow-x:hidden;
+    -webkit-overflow-scrolling:touch; padding: 8px 0 12px;
   }
   .stage.on { display:flex; animation: fadeIn .5s ease; }
+  .stage > :first-child { margin-top: auto; }
+  .stage > :last-child { margin-bottom: auto; }
   @keyframes fadeIn { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:none; } }
 
   .stage-title { font-size: 20px; letter-spacing:3px; font-weight:500; margin-bottom:6px; color:#fff; }
-  .stage-desc { font-size: 13px; color:#c8b4e8; margin-bottom: 22px; letter-spacing:1px; text-align:center; line-height:1.9; }
-  .stage-hint { font-size: 12px; color:#9a86c4; margin-top: 18px; letter-spacing:2px; }
+  .stage-desc { font-size: 13px; color:#c8b4e8; margin-bottom: 12px; letter-spacing:1px; text-align:center; line-height:1.85; }
+  .stage-hint { font-size: 12px; color:#9a86c4; margin-top: 16px; letter-spacing:2px; }
+
+  /* 典故卡：引经据典 */
+  .lore {
+    width:100%; max-width:380px;
+    background: rgba(255,255,255,.05);
+    border:1px solid rgba(200,170,240,.18);
+    border-left:2px solid rgba(232,138,192,.6);
+    border-radius:14px;
+    padding: 13px 16px; margin-bottom: 14px;
+    text-align:left; letter-spacing:1px;
+  }
+  .lore-quote { font-size: 14px; line-height:1.7; color:#f2e6ff; }
+  .lore-src { font-size: 11px; color:#b88ad0; margin-top: 5px; letter-spacing:2px; }
+  .lore-note { font-size: 12px; line-height:1.8; color:#c9b6e0; margin-top: 8px; }
 
   .btn {
     padding: 13px 30px; font-size: 15px; letter-spacing:3px;
@@ -109,11 +126,14 @@
     position:absolute; cursor:pointer; 
     font-size: 30px; transform: translate(-50%,-50%);
     animation: starFloat 3s ease-in-out infinite;
-    transition: transform .25s;
+    will-change: transform, opacity;
   }
-  .star:active { transform: translate(-50%,-50%) scale(1.5); }
-  .star.gone { animation: starPop .4s ease forwards; pointer-events:none; }
-  @keyframes starPop { to { transform: translate(-50%,-50%) scale(3); opacity:0; } }
+  .star:active { filter: brightness(1.7) drop-shadow(0 0 10px rgba(255,224,160,.9)); }
+  .star.gone { animation: starPop .26s ease-out forwards; pointer-events:none; }
+  @keyframes starPop {
+    from { opacity:1; transform: translate(-50%,-50%) scale(1); }
+    to   { opacity:0; transform: translate(-50%,-50%) scale(.2); }
+  }
 
   /* ---- 关2 翻牌 ---- */
   #stage2 .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; max-width:340px; }
@@ -197,7 +217,12 @@
   <!-- 拾星 -->
   <div class="stage" id="stage1">
     <div class="stage-title">第一幕 · 拾星</div>
-    <div class="stage-desc">七夕的清晨，天上还挂着七颗晨星。<br>轻轻点一点，替 IRIS 收下它们。</div>
+    <div class="lore">
+      <div class="lore-quote">「绸缪束薪，三星在天。今夕何夕，见此良人？」</div>
+      <div class="lore-src">——《诗经·唐风·绸缪》</div>
+      <div class="lore-note">三千年前的人，在黄昏看见天边三星并排升起，便知道相见的吉时到了。传说早已模糊，可那句"今夕何夕，见此良人"的欢喜，至今仍被人一遍遍念起。先把这七颗晨星，一颗颗捡起来吧。</div>
+    </div>
+    <div class="stage-desc">轻轻点一点，替 IRIS 收下天上的晨星。</div>
     <div id="stars"></div>
     <div class="stage-hint" id="s1hint">已拾 0 / 7</div>
   </div>
@@ -205,7 +230,12 @@
   <!-- 织云 -->
   <div class="stage" id="stage2">
     <div class="stage-title">第二幕 · 织云</div>
-    <div class="stage-desc">白昼，替织女把散落的云锦一一找回。<br>翻开卡片，凑成对子。</div>
+    <div class="lore">
+      <div class="lore-quote">「纤纤擢素手，札札弄机杼。」</div>
+      <div class="lore-src">——《古诗十九首·迢迢牵牛星》</div>
+      <div class="lore-note">织女本是天帝之女，最善织云锦天衣。可这首诗里，她握着机杼织了又织，心里却只想着渡河。替她把散落的云锦一一寻回，也算织成一件天衣。</div>
+    </div>
+    <div class="stage-desc">白昼，翻开卡片，把云锦凑成一对对。</div>
     <div class="grid" id="grid"></div>
     <div class="stage-hint" id="s2hint">已配 0 / 4 对</div>
   </div>
@@ -213,7 +243,12 @@
   <!-- 传书 -->
   <div class="stage" id="stage3">
     <div class="stage-title">第三幕 · 传书</div>
-    <div class="stage-desc">午后，写一句只属于今晚的话。</div>
+    <div class="lore">
+      <div class="lore-quote">「云中谁寄锦书来？雁字回时，月满西楼。」</div>
+      <div class="lore-src">——李清照《一剪梅》</div>
+      <div class="lore-note">古人把最重的心事，都托给云里的雁字与锦书。今晚这句轻轻的话，也借一片云寄出去。点到就好，不必说尽。</div>
+    </div>
+    <div class="stage-desc">午后，选几片词，写一句只属于今晚的话。</div>
     <div class="sentence" id="sentence"></div>
     <div class="choices" id="choices"></div>
     <div style="margin-top:24px;" class="btn" id="sendBtn" disabled>寄出这封信</div>
@@ -222,7 +257,12 @@
   <!-- 搭桥 -->
   <div class="stage" id="stage4">
     <div class="stage-title">第四幕 · 搭桥</div>
-    <div class="stage-desc">入夜，喜鹊一只只飞来。点一点，<br>让它们在天河上搭起一座桥。</div>
+    <div class="lore">
+      <div class="lore-quote">「金风玉露一相逢，便胜却人间无数。」</div>
+      <div class="lore-src">——秦观《鹊桥仙》</div>
+      <div class="lore-note">全天下只有这一夜，喜鹊会成群飞起，在天河上架一座桥。秦观说，金风玉露一相逢，便胜却人间无数。点一点，让它们一只只飞上去。</div>
+    </div>
+    <div class="stage-desc">入夜，点一点，唤来喜鹊搭起一座桥。</div>
     <div id="river">
       <div class="riverline"></div>
       <div class="bridge" id="bridge"></div>
@@ -234,6 +274,11 @@
   <!-- 相会 -->
   <div class="stage" id="stage5">
     <div class="stage-title">第五幕 · 相会</div>
+    <div class="lore">
+      <div class="lore-quote">「天阶夜色凉如水，卧看牵牛织女星。」</div>
+      <div class="lore-src">——杜牧《秋夕》</div>
+      <div class="lore-note">千百年过去，人们还是会在这一夜抬头，看那两颗星慢慢走近。相会很短，短到只够互望一眼，却让往后所有平常的日子，都有了光。</div>
+    </div>
     <div class="meet">
       <div class="lover" id="lShe">🌸</div>
       <div class="lover" id="lHe">⭐</div>
@@ -382,9 +427,9 @@ function flipCard(el, sym){
 
 /* ===== 关3 传书 ===== */
 var sentenceParts = [
-  { label:'今天，', opts:['我想见你','我想念你','我想着你'] },
-  { label:'我已经', opts:['把银河借来','把晨星收好','把想念攒满'] },
-  { label:'只为对你说一句', opts:['七夕快乐','我很想你','往后的路一起走'] },
+  { label:'今天，', opts:['风很温柔','天气很好','云很好看'] },
+  { label:'我替你把', opts:['星星收好了','银河借来了','月亮擦亮了'] },
+  { label:'顺带说一句', opts:['七夕快乐','记得早点睡','每天都开心'] },
 ];
 var picks = [null,null,null];
 function initLetter(){
@@ -502,13 +547,13 @@ function boom(){
 function showFinal(){
   var ft = document.getElementById('finalText');
   ft.style.display='block';
-  ft.textContent = 'IRIS：\n七夕快乐。\n我把晨星收好，把云霞织成信，\n把一整个黄昏的鹊，都赶到这座桥上，\n只为七月初七，走到你面前，说一句——\n我想见你。';
+  ft.textContent = '七夕快乐。\n今晚的星星很好看，云也很轻。\n古人在这一夜，把最想见的人悄悄放进心里。\n我也把今晚这份好看，留给你。\n愿往后每一天，你都温柔又明亮。';
   var wrap = document.getElementById('meetBtnWrap');
   wrap.innerHTML = '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">'+
-    '<div class="btn" id="copyBtn">复制这句告白</div>'+
+    '<div class="btn" id="copyBtn">复制这句话</div>'+
     '<button class="btn ghost" id="replayBtn">再走一遍</button></div>';
   document.getElementById('copyBtn').onclick = function(){
-    var txt = 'IRIS：\n七夕快乐。\n我把晨星收好，把云霞织成信，\n把一整个黄昏的鹊，都赶到这座桥上，\n只为七月初七，走到你面前，说一句——\n我想见你。';
+    var txt = '七夕快乐。\n今晚的星星很好看，云也很轻。\n古人在这一夜，把最想见的人悄悄放进心里。\n我也把今晚这份好看，留给你。\n愿往后每一天，你都温柔又明亮。';
     if (navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(txt).then(function(){
         document.getElementById('copyBtn').textContent='已复制 ✓';
